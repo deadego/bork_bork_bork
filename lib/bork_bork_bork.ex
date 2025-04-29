@@ -1,75 +1,64 @@
 defmodule BorkBorkBork do
-  alias BorkBorkBork.Parser
+  @moduledoc """
+  BorkBorkBork is a parser for Cooklang recipes.
+  """
 
-  # Parse a cooklang recipe string into structured data
+  alias BorkBorkBork.Recipe
+
+  @doc """
+  Parses a Cooklang recipe string into a structured format.
+
+  ## Parameters
+
+  - `input` - The recipe string in Cooklang format
+
+  ## Returns
+
+  - `{:ok, result}` - A map representation of the parsed recipe
+  - `{:error, reason}` - An error tuple with the reason
+  """
   def parse(input) do
-    # Extract metadata from YAML front matter if present
-    {metadata, content} = extract_metadata(input)
-
-    # Parse the recipe content
-    case Parser.parse(content) do
+    # First try with the original parser for backward compatibility
+    case BorkBorkBork.Parser.parse(input) do
       {:ok, result} ->
+        # Extract metadata from YAML front matter if present
+        {metadata, _} = Recipe.extract_metadata(input)
+
         # Add the metadata to the result
         result = put_in(result, ["metadata", "map"], metadata)
         {:ok, result}
+
+      # If that fails, fall back to the new parser
+      {:error, _, _} ->
+        case Recipe.parse(input) do
+          {:ok, recipe} ->
+            # Convert the Recipe struct to a map for API compatibility
+            {:ok, Recipe.to_map(recipe)}
+
+          error ->
+            error
+        end
 
       error ->
         error
     end
   end
 
-  # Extract YAML metadata from the front matter
-  defp extract_metadata(input) do
-    case Regex.run(~r/^---\s*\n(.*?)\n\s*---\s*\n(.*)/s, input) do
-      [_, yaml_str, content] ->
-        # Parse the YAML metadata
-        metadata = parse_yaml_metadata(yaml_str)
-        {metadata, content}
+  @doc """
+  Parses a Cooklang recipe string and returns a Recipe struct instead of a plain map.
 
-      _ ->
-        # No metadata found
-        {%{}, input}
-    end
-  end
+  This is useful when you want to work with the Recipe struct directly.
 
-  # Parse YAML metadata
-  defp parse_yaml_metadata(yaml_str) do
-    # Parse YAML metadata from string
-    yaml_str
-    |> String.split("\n", trim: true)
-    |> Enum.map(&String.trim/1)
-    |> Enum.reject(&(String.length(&1) == 0))
-    |> Enum.map(fn line ->
-      case String.split(line, ":", parts: 2) do
-        [key, value] ->
-          clean_value =
-            value
-            |> String.trim()
-            |> String.trim_leading("'")
-            |> String.trim_trailing("'")
-            |> String.trim_leading("\"")
-            |> String.trim_trailing("\"")
+  ## Parameters
 
-          # Handle list values like [item1, item2]
-          final_value =
-            if String.match?(clean_value, ~r/^\[.*\]$/) do
-              # Extract items between brackets and split by comma
-              clean_value
-              # Remove outer brackets
-              |> String.slice(1..(String.length(clean_value) - 2))
-              |> String.split(",")
-              |> Enum.map(&String.trim/1)
-            else
-              clean_value
-            end
+  - `input` - The recipe string in Cooklang format
 
-          {String.trim(key), final_value}
+  ## Returns
 
-        _ ->
-          nil
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Map.new()
+  - `{:ok, recipe}` - A Recipe struct representing the parsed recipe
+  - `{:error, reason}` - An error tuple with the reason
+  """
+  def parse_to_struct(input) do
+    Recipe.parse(input)
   end
 end
