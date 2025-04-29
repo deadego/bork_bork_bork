@@ -1,5 +1,5 @@
 # BorkBorkBork 👨‍🍳
-An elixir parser impolimentation for the cooklang specification
+An elixir parser implementation for the [cooklang](https://cooklang.org) specification
 
 ## Installation
 
