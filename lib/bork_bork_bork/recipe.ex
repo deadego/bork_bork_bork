@@ -5,7 +5,8 @@ defmodule BorkBorkBork.Recipe do
 
   alias BorkBorkBork.Models.Recipe
 
-  alias BorkBorkBork.ParserV2
+  alias BorkBorkBork.Parser
+  alias BorkBorkBork.Parser_New
 
   @doc """
   Parses a recipe string into a Recipe struct.
@@ -15,14 +16,26 @@ defmodule BorkBorkBork.Recipe do
     {metadata, content} = extract_metadata(input)
 
     # Parse the recipe content
-    case ParserV2.parse(content) do
+    case Parser_New.parse(content) do
       {:ok, recipe = %Recipe{}} ->
         # Add the metadata to the recipe
         recipe = %{recipe | metadata: %{"map" => metadata}}
         {:ok, recipe}
 
-      error ->
-        error
+      _error ->
+        # Fallback to legacy parser for backward compatibility
+        case Parser.parse(content) do
+          {:ok, recipe_map} ->
+            # Convert to struct and add the metadata
+            recipe = 
+              Recipe.from_map(recipe_map)
+              |> Map.put(:metadata, %{"map" => metadata})
+            
+            {:ok, recipe}
+            
+          parse_error -> 
+            parse_error
+        end
     end
   end
 

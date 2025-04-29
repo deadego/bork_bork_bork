@@ -136,7 +136,7 @@ defmodule BorkBorkBork.Parser do
     # Check if we have text with timer reference
     has_timer_ref =
       Enum.any?(elements, fn
-        {:text, [text]} -> String.contains?(text, "~{15%minutes}")
+        {:text, [text]} when is_binary(text) -> String.contains?(text, "~{15%minutes}")
         _ -> false
       end)
 

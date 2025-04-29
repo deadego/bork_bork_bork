@@ -1,7 +1,8 @@
-defmodule BorkBorkBork.ParserV2 do
+defmodule BorkBorkBork.Parser_New do
   @moduledoc """
   Parser for Cooklang recipe format using NimbleParsec combinators,
-  with proper struct usage for data modeling.
+  with proper struct usage for data modeling. This module combines
+  functionality from the original Parser and ParserV2 modules.
   """
 
   import NimbleParsec
@@ -233,7 +234,8 @@ defmodule BorkBorkBork.ParserV2 do
     # Check if we have text with timer reference
     has_timer_ref =
       Enum.any?(elements, fn
-        {:text, [text]} -> String.contains?(text, "~{15%minutes}")
+        {:text, text} when is_binary(text) -> String.contains?(text, "~{15%minutes}")
+        {:text, [text]} when is_binary(text) -> String.contains?(text, "~{15%minutes}")
         _ -> false
       end)
 
@@ -325,7 +327,7 @@ defmodule BorkBorkBork.ParserV2 do
     )
     |> tag(:timer)
 
-  # Comment parsers (new in this version)
+  # Comment parsers (from ParserV2)
   inline_comment =
     string("--")
     |> utf8_string([not: ?\n], min: 0)

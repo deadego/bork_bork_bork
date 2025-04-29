@@ -85,7 +85,7 @@ defmodule BorkBorkBork.Models.Recipe do
   @doc """
   Converts the struct to a map that matches the expected output format.
   """
-  def to_map(recipe) do
+  def to_map(%__MODULE__{} = recipe) do
     %{
       "metadata" => recipe.metadata,
       "ingredients" => Enum.map(recipe.ingredients, &Ingredient.to_map/1),
@@ -95,5 +95,10 @@ defmodule BorkBorkBork.Models.Recipe do
       "inline_quantities" => recipe.inline_quantities,
       "data" => recipe.data
     }
+  end
+  
+  # For backward compatibility with map inputs
+  def to_map(recipe) when is_map(recipe) do
+    recipe
   end
 end

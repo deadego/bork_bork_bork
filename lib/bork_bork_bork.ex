@@ -18,7 +18,7 @@ defmodule BorkBorkBork do
   - `{:error, reason}` - An error tuple with the reason
   """
   def parse(input) do
-    # First try with the original parser for backward compatibility
+    # For backward compatibility with tests, use the original parser directly
     case BorkBorkBork.Parser.parse(input) do
       {:ok, result} ->
         # Extract metadata from YAML front matter if present
@@ -28,19 +28,16 @@ defmodule BorkBorkBork do
         result = put_in(result, ["metadata", "map"], metadata)
         {:ok, result}
 
-      # If that fails, fall back to the new parser
-      {:error, _, _} ->
+      error ->
+        # If that fails, try the new struct-based parser
         case Recipe.parse(input) do
           {:ok, recipe} ->
             # Convert the Recipe struct to a map for API compatibility
             {:ok, Recipe.to_map(recipe)}
 
-          error ->
+          _ ->
             error
         end
-
-      error ->
-        error
     end
   end
 
